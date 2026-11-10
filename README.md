@@ -52,49 +52,250 @@ Este laboratorio valida el ciclo completo de una rampa cripto-fiat sobre **Stell
 
 El repositorio sigue el patrón **Puertos y Adaptadores** (Hexagonal Architecture), separando la lógica de negocio del dominio de las preocupaciones de infraestructura.
 
-### Diagrama de Capas
+### Diagrama de Arquitectura Hexagonal (Mermaid)
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        ENTRY POINTS (Scripts de Lab)                        │
-│  lab-offramp-usdc-real.js   lab-onramp-sdf.js   lab-multimoneda.js          │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                  │
-                                  ▼ (usa)
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                      APLICACIÓN (Casos de Uso)                              │
-│  OnRampUseCase.js   OffRampUseCase.js                                       │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                  │
-                                  ▼ (depende de puertos)
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                      DOMINIO (Entidades y Puertos)                          │
-│  Entidades: RampOrder, RampQuote, StellarAccount                            │
-│  Puertos:   RampProvider, StellarGateway, AuthProvider                      │
-│  Servicio:  RampService (lógica pura)                                       │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                  │
-                                  ▼ (implementa puertos)
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                 INFRAESTRUCTURA (Adaptadores concretos)                     │
-│  • StellarHorizonAdapter  (@stellar/stellar-sdk → Horizon)                 │
-│  • MockRampAdapter        (@ramp-kit/core → MockProvider)                  │
-│  • SdfRampAdapter         (REST → testanchor.stellar.org SEP-10/6/24)      │
-│  • CsvJsonExporter        (fs → archivos JSON/CSV)                         │
-│  • NetworkConfig          (configuración de redes y activos)               │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph EntryPoints ["ENTRY POINTS (Scripts de Lab)"]
+        EP1[lab-offramp-usdc-real.js]
+        EP2[lab-onramp-sdf.js]
+        EP3[lab-multimoneda.js]
+    end
+
+    subgraph Application ["APLICACIÓN (Casos de Uso)"]
+        UC1[OnRampUseCase]
+        UC2[OffRampUseCase]
+    end
+
+    subgraph Domain ["DOMINIO (Entidades y Puertos)"]
+        E1[RampOrder]
+        E2[RampQuote]
+        E3[StellarAccount]
+        S1[RampService]
+        P1[RampProvider puerto]
+        P2[StellarGateway puerto]
+        P3[AuthProvider puerto]
+    end
+
+    subgraph Infrastructure ["INFRAESTRUCTURA (Adaptadores concretos)"]
+        A1[StellarHorizonAdapter]
+        A2[MockRampAdapter]
+        A3[SdfRampAdapter]
+        A4[CsvJsonExporter]
+        A5[NetworkConfig]
+    end
+
+    subgraph External ["EXTERNO"]
+        X1[(Stellar Testnet / Horizon)]
+        X2[Anchor SDF testanchor.stellar.org]
+        X3[Friendbot]
+    end
+
+    EP1 --> UC2
+    EP2 --> UC1
+    EP3 --> UC1
+    EP3 --> UC2
+
+    UC1 --> P1
+    UC1 --> P2
+    UC2 --> P1
+    UC2 --> P2
+
+    P1 -.-> A2
+    P1 -.-> A3
+    P2 -.-> A1
+    P3 -.-> A3
+
+    A1 --> X1
+    A1 --> X3
+    A3 --> X2
+    A4 -->|exporta JSON/CSV| FS[(archivos resultados)]
+
+    style Domain fill:#e1f5fe,stroke:#01579b
+    style Application fill:#fff3e0,stroke:#e65100
+    style Infrastructure fill:#f3e5f5,stroke:#4a148c
+    style EntryPoints fill:#e8f5e9,stroke:#1b5e20
+    style External fill:#ffebee,stroke:#b71c1c
 ```
 
 ### Regla de Dependencias
 
-```
-Domain  →  no depende de nada (puros JS)
-Application → depende solo de Domain (puertos)
-Infrastructure → depende de Domain e Application (implementa puertos)
-Entry Points → depende de Application e Infrastructure (ensambla todo)
+```mermaid
+graph LR
+    subgraph Domain
+        D[Dominio<br/>Entidades + Puertos + Servicio]
+    end
+    subgraph Application
+        A[Aplicación<br/>Casos de Uso]
+    end
+    subgraph Infrastructure
+        I[Infraestructura<br/>Adaptadores concretos]
+    end
+    subgraph EntryPoints
+        E[Entry Points<br/>Scripts de laboratorio]
+    end
+
+    A --> D
+    I --> D
+    I --> A
+    E --> A
+    E --> I
+
+    style D fill:#e1f5fe,stroke:#01579b
+    style A fill:#fff3e0,stroke:#e65100
+    style I fill:#f3e5f5,stroke:#4a148c
+    style E fill:#e8f5e9,stroke:#1b5e20
 ```
 
-**Nunca** el dominio importa de infraestructura. **Nunca** la aplicación importa de un adaptador concreto.
+**Regla:** Las flechas indican dependencia. El dominio no depende de nada; la aplicación depende solo del dominio (a través de puertos); la infraestructura implementa los puertos del dominio; los entry points ensamblan aplicación e infraestructura.
+
+---
+
+### Flujo On-Ramp (Fiat → USDC) — Mermaid
+
+```mermaid
+sequenceDiagram
+    participant U as Usuario / Lab
+    participant EP as Entry Point<br/>lab-onramp-sdf.js
+    participant UC as OnRampUseCase
+    participant RP as RampProvider<br/>(MockRampAdapter o SdfRampAdapter)
+    participant SG as StellarGateway<br/>(StellarHorizonAdapter)
+    participant X as Stellar Testnet<br/>+ Anchor SDF
+
+    U->>EP: Ejecutar script con monto fiat
+    EP->>UC: execute({direction: onramp, ...})
+    UC->>RP: getQuote(fiat, asset, amount)
+    RP-->>UC: RampQuote (tasa, fee, expiración)
+    UC->>RP: createOrder(quote)
+    RP-->>UC: RampOrder (awaiting_deposit)
+    UC->>RP: simulateFiatReceived(orderId)
+    RP-->>X: Simular depósito fiat (sandbox)
+    loop Polling hasta settled
+        UC->>RP: getOrder(orderId)
+        RP-->>UC: status (processing → settled)
+    end
+    UC-->>EP: Resultado (orden settled + txHash + rampGap)
+    EP-->>U: Mostrar resultado + exportar CSV/JSON
+
+    alt Anchor Real SDF
+        UC->>RP: getQuote / createOrder via REST SEP-6
+        RP->>X: HTTP POST testanchor.stellar.org
+        X-->>RP: Respuesta de orden
+        RP-->>UC: Orden creada
+        note over U,X: El usuario debe abrir URL SEP-24 interactiva<br/>y completar KYC (SEP-12) manualmente
+    end
+```
+
+### Flujo Off-Ramp (USDC → Fiat) — Mermaid
+
+```mermaid
+sequenceDiagram
+    participant U as Usuario / Lab
+    participant EP as Entry Point<br/>lab-offramp-usdc-real.js
+    participant UC as OffRampUseCase
+    participant RP as RampProvider<br/>(MockRampAdapter)
+    participant SG as StellarGateway<br/>(StellarHorizonAdapter)
+    participant X as Stellar Testnet
+
+    U->>EP: Ejecutar script con monto USDC
+    EP->>UC: execute({direction: offramp, ...})
+    UC->>RP: getQuote(fiat, asset, usdcAmount)
+    RP-->>UC: RampQuote (tasa, fee, monto fiat destino)
+    UC->>RP: createOrder(quote)
+    RP-->>UC: RampOrder (processing)
+    UC->>SG: sendPayment(secretKey, destination, USDC, amount, memo)
+    SG->>X: Transacción on-chain (Horizon Testnet)
+    X-->>SG: Tx hash confirmado
+    SG-->>UC: txHash + status
+    UC->>RP: simulateFiatPayout(orderId)  (sandbox)
+    RP-->>X: Simular pago fiat de salida
+    loop Polling hasta settled
+        UC->>RP: getOrder(orderId)
+        RP-->>UC: status (processing → settled)
+    end
+    UC-->>EP: Resultado (orden settled + txHash on-chain)
+    EP-->>U: Mostrar resultado + exportar CSV/JSON
+
+    note over SG,X: El envío USDC es una transacción real<br/>verificable en Stellar Expert Testnet
+```
+
+### Flujo Off-Ramp al Anchor SDF (con fallo detectado) — Mermaid
+
+```mermaid
+sequenceDiagram
+    participant U as Usuario
+    participant EP as Entry Point
+    participant UC as OffRampUseCase
+    participant SG as StellarGateway
+    participant A as Anchor SDF<br/>(testanchor.stellar.org)
+    participant X as Stellar Testnet
+
+    U->>EP: Enviar USDC al anchor SDF
+    EP->>SG: sendPayment(USDC, anchorAccount, 5)
+    SG->>X: Transacción on-chain
+    X-->>SG: Error 400 Bad Request
+    SG-->>UC: Excepción (anchor sin trustline USDC)
+    UC-->>EP: Fallo reportado
+    EP-->>U: Alternativa: enviar XLM nativo (demo)
+    SG->>X: Transacción 1 XLM al anchor (exitosa)
+    X-->>SG: Tx hash confirmado
+    SG-->>UC: Demo completado
+    UC-->>EP: Resultado mixto (USDC falló, XLM OK)
+    EP-->>U: Limitación documentada en README
+
+    note over A,X: El Anchor SDF no tiene trustline al USDC de Circle.<br/>Ambos extremos deben confiar en el mismo activo.
+```
+
+---
+
+## 🧩 Diagrama de Componentes de Infraestructura
+
+```mermaid
+graph TD
+    subgraph DomainLayer [Domain]
+        RO[RampOrder]
+        RQ[RampQuote]
+        SA[StellarAccount]
+        RS[RampService]
+        RP[RampProvider puerto]
+        SG[StellarGateway puerto]
+        AP[AuthProvider puerto]
+    end
+
+    subgraph InfraLayer [Infrastructure]
+        SHA[StellarHorizonAdapter<br/>@stellar/stellar-sdk]
+        MRA[MockRampAdapter<br/>@ramp-kit/core]
+        SRA[SdfRampAdapter<br/>REST SEP-10/6/24]
+        CJE[CsvJsonExporter<br/>fs.writeFileSync]
+        NC[NetworkConfig<br/>constantes red/assets]
+    end
+
+    subgraph ExternalLayer [Externo]
+        HZ[Horizon Testnet]
+        FB[Friendbot]
+        AN[Anchor SDF]
+    end
+
+    RP -.-> MRA
+    RP -.-> SRA
+    SG -.-> SHA
+    AP -.-> SRA
+
+    SHA --> HZ
+    SHA --> FB
+    SRA --> AN
+
+    DomainLayer -.-> InfraLayer
+    InfraLayer --> ExternalLayer
+
+    style DomainLayer fill:#e1f5fe,stroke:#01579b
+    style InfraLayer fill:#f3e5f5,stroke:#4a148c
+    style ExternalLayer fill:#ffebee,stroke:#b71c1c
+```
+
+---
+
+### Capa de Dominio (Domain)
 
 ---
 
