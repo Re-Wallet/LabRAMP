@@ -20,7 +20,9 @@
 4. [Entorno de Pruebas](#entorno-de-pruebas)
 5. [Cuentas y Credenciales de Testnet](#cuentas-y-credenciales-de-testnet)
 6. [Evidencia On-Chain (Transacciones Reales)](#evidencia-on-chain-transacciones-reales)
-7. [Resultados por Fase](#resultados-por-fase)
+7. [🔗 Enlaces de Verificación en Stellar Expert (Testnet)](#enlaces-de-verificación-en-stellar-expert-testnet)
+8. [Todo lo Verificado (Checklist de Evidencia)](#todo-lo-verificado-checklist-de-evidencia)
+9. [Resultados por Fase](#resultados-por-fase)
 8. [Cómo Ejecutar el Laboratorio](#cómo-ejecutar-el-laboratorio)
 9. [Consideraciones Arquitectónicas](#consideraciones-arquitectónicas)
 10. [Consideraciones de Cumplimiento (KYC/AML)](#consideraciones-de-cumplimiento-kyc-aml)
@@ -301,6 +303,60 @@ Todas las transacciones son verificables en [Stellar Expert Testnet](https://ste
 | **Tx Hash** | `7dac7d2b20038a832791a3cb2626af16e38202f5f73ed87fa3f989d39cf45922` |
 | **Cuenta** | `GA67L2Q2P57MNL6SMDWIVKZVGQN7KN4N43IHM6EHQ3YYWNY2B753C7EW` |
 | **Activo** | SRT:GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B |
+
+---
+
+## 🔗 Enlaces de Verificación en Stellar Expert (Testnet)
+
+Todos los links apuntan a **Stellar Expert Testnet** (`https://stellar.expert/explorer/testnet`) y son verificables públicamente.
+
+### Transacciones On-Chain
+
+| # | Transacción | Descripción | Link |
+|---|-------------|-------------|------|
+| 1 | `89fb30c0e86a6e6b96a2c72f716588214f249e7bf46c724c88322e062a204378` | **Off-Ramp USDC Real** – Envío de 20 USDC (Circle) desde cuenta origen a cuenta destino con trustline USDC. | [Ver en Stellar Expert](https://stellar.expert/explorer/testnet/tx/89fb30c0e86a6e6b96a2c72f716588214f249e7bf46c724c88322e062a204378) |
+| 2 | `8e0f8e57318410807eeba8a829d83af471457a8d23569cfcb01e9fc4afbc713f` | **Off-Ramp XLM Demo** – Envío de 1 XLM nativo desde cuenta origen al Anchor SDF (`GCSGSR6KQQ5BP2FXVPWRL6SWPUSFWLVONLIBJZUKTVQB5FYJFVL6XOXE`). | [Ver en Stellar Expert](https://stellar.expert/explorer/testnet/tx/8e0f8e57318410807eeba8a829d83af471457a8d23569cfcb01e9fc4afbc713f) |
+| 3 | `0ab8e45f9a446f6bfafe42079d8c5c5101c10aeccfed94458b3ab5e8922a3b0c` | **Trustline USDC (Cuenta Destino)** – Creación de trustline a USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5 en la cuenta destino del off-ramp. | [Ver en Stellar Expert](https://stellar.expert/explorer/testnet/tx/0ab8e45f9a446f6bfafe42079d8c5c5101c10aeccfed94458b3ab5e8922a3b0c) |
+| 4 | `7dac7d2b20038a832791a3cb2626af16e38202f5f73ed87fa3f989d39cf45922` | **Trustline SRT (Cuenta Origen)** – Creación de trustline a SRT:GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B en la cuenta persistente. | [Ver en Stellar Expert](https://stellar.expert/explorer/testnet/tx/7dac7d2b20038a832791a3cb2626af16e38202f5f73ed87fa3f989d39cf45922) |
+
+### Cuentas en el Explorador
+
+| # | Cuenta Pública | Descripción | Link |
+|---|---------------|-------------|------|
+| 1 | `GA67L2Q2P57MNL6SMDWIVKZVGQN7KN4N43IHM6EHQ3YYWNY2B753C7EW` | **Cuenta Origen (Persistente)** – Cuenta de testnet con XLM y USDC, usada como origen en el off-ramp real. | [Ver cuenta](https://stellar.expert/explorer/testnet/account/GA67L2Q2P57MNL6SMDWIVKZVGQN7KN4N43IHM6EHQ3YYWNY2B753C7EW) |
+| 2 | `GDSASZROO2FMJ3J2W6XRGFRUNWHNFE3SFAAA2HC2UVEZRFZGZDTEECLV` | **Cuenta Destino (Off-Ramp USDC)** – Cuenta creada con Friendbot, trustline USDC, recibió 20 USDC en el off-ramp real. | [Ver cuenta](https://stellar.expert/explorer/testnet/account/GDSASZROO2FMJ3J2W6XRGFRUNWHNFE3SFAAA2HC2UVEZRFZGZDTEECLV) |
+| 3 | `GCSGSR6KQQ5BP2FXVPWRL6SWPUSFWLVONLIBJZUKTVQB5FYJFVL6XOXE` | **Anchor SDF** – Cuenta pública del Anchor de referencia de SDF en testnet (según su `stellar.toml`). | [Ver cuenta](https://stellar.expert/explorer/testnet/account/GCSGSR6KQQ5BP2FXVPWRL6SWPUSFWLVONLIBJZUKTVQB5FYJFVL6XOXE) |
+
+---
+
+## ✅ Todo lo Verificado (Checklist de Evidencia)
+
+### On-Chain (Transacciones Reales en Testnet)
+
+- [x] **Creación de cuenta destino** vía Friendbot (fondado con XLM de testnet)
+- [x] **Trustline USDC en cuenta destino** – tx: `0ab8e45f...` (ver arriba)
+- [x] **Off-ramp USDC on-chain real** – 20 USDC enviados de `GA67L2Q...` a `GDSASZR...`, tx: `89fb30c0...` (ver arriba)
+- [x] **Saldo origen USDC:** 20.0000000 → 0.0000000 (verificado en cuenta origen)
+- [x] **Saldo destino USDC:** 0.0000000 → 20.0000000 (verificado en cuenta destino)
+- [x] **Off-ramp XLM nativo al Anchor SDF** – 1 XLM enviado, tx: `8e0f8e57...` (ver arriba)
+- [x] **Trustline SRT en cuenta origen** – tx: `7dac7d2b...` (ver arriba)
+- [x] **Autenticación SEP-10 con Anchor SDF** – Token recibido correctamente de `testanchor.stellar.org`
+
+### Off-Chain / Lógica de Negocio (MockProvider Sandbox)
+
+- [x] **On-Ramp BRL → USDC** – 100 BRL → 18.8212927 USDC, estado `settled`
+- [x] **Off-Ramp USDC → BRL** – 10 USDC → 52.07 BRL, estado `settled`
+- [x] **On-Ramp MXN → USDC** – 100 MXN → 5.4395604 USDC, estado `settled`
+- [x] **Off-Ramp USDC → MXN** – 10 USDC → 180.18 MXN, estado `settled`
+- [x] **On-Ramp ARS → USDC** – 100 ARS → 0.0782608 USDC, estado `settled`
+- [x] **Off-Ramp USDC → ARS** – 10 USDC → 12523.50 ARS, estado `settled`
+
+### Arquitectura y Código
+
+- [x] **Arquitectura Hexagonal implementada** – Domain (entidades, puertos, servicio), Application (use cases), Infrastructure (adaptadores), Entry Points
+- [x] **Separación de dependencias** – Domain no depende de infraestructura; Application depende solo de Domain
+- [x] **Exportación de resultados** – CSV y JSON generados para cada ejecución
+- [x] **README completo** – Documentación de arquitectura, cuentas, evidencia, consideraciones KYC/AML y Ramp Gap
 
 ---
 
