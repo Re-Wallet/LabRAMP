@@ -1,1 +1,7 @@
-{"type":"module"}
+{
+  "dependencies": {
+    "@ramp-kit/core": "^0.1.7",
+    "@stellar/stellar-sdk": "^17.4.0",
+    "node-fetch": "^2.7.0"
+  }
+}
