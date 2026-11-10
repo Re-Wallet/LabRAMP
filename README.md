@@ -692,12 +692,145 @@ El **Ramp Gap** es el lapso entre la confirmación fiat (reversible, lenta) y la
 
 ---
 
-## ❌ Limitaciones Encontradas
+## 12. [Diagrama de Estados de las Órdenes (Ramp Order Lifecycle)](#diagrama-de-estados-de-las-ordenes-ramp-order-lifecycle)
+
+### Diagrama de Ciclo de Vida de una Orden de Rampa
+
+```mermaid
+stateDiagram-v2
+    [*] --> Creada
+    Creada --> AwaitingDeposit : createOrder()
+    AwaitingDeposit --> Procesando : simulateFiatReceived() / pago on-chain
+    Procesando --> Settled : confirmación on-chain / fiat recibido
+    Procesando --> Fallido : error de proveedor / saldo insuficiente
+    Creada --> Cancelada : cancelOrder()
+    AwaitingDeposit --> Cancelada : cancelOrder()
+    Procesando --> Cancelada : cancelOrder()
+    Fallido --> [*]
+    Settled --> [*]
+    Cancelada --> [*]
+
+    state Creada {
+        [*] --> OrdenAceptada
+        OrdenAceptada --> CotizacionValida : quote valida
+        CotizacionValida --> [*]
+    }
+
+    state Procesando {
+        [*] --> Intercambiando
+        Intercambiando --> Liquidando
+        Liquidando --> [*]
+    }
+
+    state Settled {
+        [*] --> FondosDisponibles
+        FondosDisponibles --> [*] : tx confirmada en blockchain
+    }
+
+    state Fallido {
+        [*] --> MotivoRechazo
+        MotivoRechazo --> [*]
+    }
+```
+
+**Estados explicados:**
+
+| Estado | Descripción | Cuándo se usa |
+|--------|-------------|---------------|
+| `Creada` | Orden aceptada por el proveedor de rampa | Después de `createOrder()` |
+| `AwaitingDeposit` | Esperando depósito fiat (on-ramp) o cripto (off-ramp) | Usuario debe enviar fondos |
+| `Procesando` | Proveedor está intercambiando y liquidando | Entre recepción de fondos y entrega |
+| `Settled` | Orden completada, fondos entregados | Transacción on-chain confirmada |
+| `Fallido` | Orden terminó con error | Saldo insuficiente, error de proveedor, etc. |
+| `Cancelada` | Orden cancelada por usuario o proveedor | `cancelOrder()` invocado |
+
+---
+
+## 13. [Lecciones Aprendidas y Conclusiones Técnicas para Tesis](#lecciones-aprendidas-y-conclusiones-tecnicas-para-tesis)
+
+### ¿Qué se validó realmente?
+
+1. **Conversión fiat ↔ USDC es técnicamente viable** sobre Stellar Testnet usando SEP-6 y SEP-24.
+2. **SEP-10 autenticación funciona** correctamente con el Anchor de referencia de SDF (`testanchor.stellar.org`).
+3. **Trustlines son prerequisito obligatorio** tanto en el remitente como en el destinatario para cualquier transferencia de activo emitido (USDC, SRT, etc.).
+4. **Transacciones on-chain son verificables públicamente** en Stellar Expert Testnet con hash de transacción.
+5. **Arquitectura Hexagonal permite intercambiar proveedores de rampa** (MockProvider, Anchor SDF, Etherfuse, etc.) sin modificar la lógica de negocio.
+
+### ¿Qué falló y por qué?
+
+| Fallo | Causa raíz | Lección para producción |
+|-------|------------|-------------------------|
+| Off-ramp USDC → Anchor SDF | El anchor no tiene trustline al USDC de Circle | Ambos extremos del intercambio deben configurar trustline al mismo activo antes de operar |
+| On-ramp SEP-24 requiere interacción manual | El endpoint interactivo del anchor necesita navegador y KYC | En producción, se debe integrar el flujo web del anchor o usar SEP-6 directo |
+| SRT sin saldo | No hay faucet público de SRT testnet | Para pruebas reales se necesita fondeo previo del activo de prueba |
+
+### Implicaciones para arquitectura de producción
+
+1. **Gestión de trustlines:** El sistema debe verificar y crear trustlines automáticamente antes de intentar cualquier pago.
+2. **Manejo de errores de anchor:** Un anchor puede rechazar una transacción por falta de configuración (trustline, límites, KYC pendiente). La aplicación debe manejar estos errores con reintentos o notificación al usuario.
+3. **Ramp Gap:** El lapso entre confirmación fiat (reversible) y entrega on-chain (irreversible) es el punto de mayor riesgo operativo. Se debe monitorear y reconciliar.
+4. **Idempotencia:** Las notificaciones webhook del anchor pueden llegar duplicadas; el sistema debe procesarlas de forma idempotente.
+5. **Separación de responsabilidades:** La arquitectura hexagonal demostró ser adecuada para aislar la complejidad de múltiples proveedores de rampa (Mock, SDF, Etherfuse, etc.).
+
+---
+
+## 14. [Limitaciones Encontradas](#limitaciones-encontradas)
 
 1. **Anchor SDF sin trustline a USDC de Circle:** No se pudo completar el off-ramp USDC directo al anchor SDF. Se envió XLM nativo como demo en su lugar.
 2. **KYC no automatizado:** El on-ramp requiere acción manual en el navegador del anchor (SEP-24 interactivo).
 3. **SRT sin saldo:** Se creó trustline a SRT pero no había saldo para enviar.
 4. **No hay faucet público de SRT testnet** encontrado durante el lab.
+
+---
+
+## 15. [Variables de Entorno (.env.example)](#variables-de-entorno)
+
+Copia este archivo como `.env` y ajusta los valores según tu entorno de pruebas:
+
+```ini
+# =============================================================================
+# Configuración de Red Stellar
+# =============================================================================
+STELLAR_NETWORK=testnet
+HORIZON_URL=https://horizon-testnet.stellar.org
+FRIENDBOT_URL=https://friendbot.stellar.org
+NETWORK_PASSPHRASE=Test SDF Network ; September 2015
+
+# =============================================================================
+# Cuenta de Origen (Persistente)
+# =============================================================================
+ORIGIN_SECRET_KEY=SCQNLSLDBNYGBVEHX26H476HZRFC74LFOH6H2FSKDWRLRQ6ONVIAZAJZ
+ORIGIN_PUBLIC_KEY=GA67L2Q2P57MNL6SMDWIVKZVGQN7KN4N43IHM6EHQ3YYWNY2B753C7EW
+
+# =============================================================================
+# Activos Soportados
+# =============================================================================
+USDC_CODE=USDC
+USDC_ISSUER=GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5
+SRT_CODE=SRT
+SRT_ISSUER=GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B
+
+# =============================================================================
+# Anchor SDF (Testnet)
+# =============================================================================
+ANCHOR_BASE_URL=https://testanchor.stellar.org
+ANCHOR_HOME_DOMAIN=testanchor.stellar.org
+ANCHOR_ACCOUNT=GCSGSR6KQQ5BP2FXVPWRL6SWPUSFWLVONLIBJZUKTVQB5FYJFVL6XOXE
+
+# =============================================================================
+# Límites de Seguridad (Testnet)
+# =============================================================================
+MAX_AMOUNT_PER_TRANSACTION=10
+DEFAULT_TRANSACTION_FEE=100
+
+# =============================================================================
+# Exportación de Resultados
+# =============================================================================
+RESULTS_OUTPUT_DIR=./lab-rampa-stellar
+EXPORT_FORMAT=json,csv
+```
+
+> ⚠️ **Nota de seguridad:** Nunca commitees un archivo `.env` con claves privadas reales en un repositorio público. Este archivo es solo para entornos de prueba (testnet).
 
 ---
 
@@ -727,5 +860,6 @@ Este laboratorio es de uso educativo y de tesis. Todas las claves y cuentas son 
 **Generado:** 2026-11-10  
 **Red:** Stellar Testnet  
 **Arquitectura:** Hexagonal (Puertos y Adaptadores)  
+**Estado:** Listo para tesis  
 **SDK:** `@stellar/stellar-sdk` + `@ramp-kit/core`  
 **Evidencia:** Transacciones on-chain verificables en Stellar Expert Testnet
