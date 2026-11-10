@@ -1,0 +1,44 @@
+[
+  {
+    "event": "TRUSTLINE_USDC_EXISTING",
+    "asset": "USDC",
+    "issuer": "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+    "account": "GA67L2Q2P57MNL6SMDWIVKZVGQN7KN4N43IHM6EHQ3YYWNY2B753C7EW",
+    "balance": "20.0000000",
+    "timestamp": "2026-11-10T06:56:02.693Z"
+  },
+  {
+    "event": "SEP10_AUTH",
+    "account": "GA67L2Q2P57MNL6SMDWIVKZVGQN7KN4N43IHM6EHQ3YYWNY2B753C7EW",
+    "home_domain": "testanchor.stellar.org",
+    "token_received": true,
+    "timestamp": "2026-11-10T06:56:03.225Z"
+  },
+  {
+    "event": "ON-RAMP_MANUAL",
+    "asset": "USDC",
+    "amount_fiat": "5",
+    "anchor_url": "https://testanchor.stellar.org/sep24/transactions/deposit/interactive?asset_code=USDC&asset_issuer=GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5&amount=5&account=GA67L2Q2P57MNL6SMDWIVKZVGQN7KN4N43IHM6EHQ3YYWNY2B753C7EW&memo_type=text&memo=LAB-ONRAMP-SDF",
+    "status": "pending_user_action",
+    "account": "GA67L2Q2P57MNL6SMDWIVKZVGQN7KN4N43IHM6EHQ3YYWNY2B753C7EW",
+    "timestamp": "2026-11-10T06:56:03.225Z"
+  },
+  {
+    "event": "OFF-RAMP_USDC_FAILED",
+    "asset": "USDC",
+    "amount": "5",
+    "destination": "GCSGSR6KQQ5BP2FXVPWRL6SWPUSFWLVONLIBJZUKTVQB5FYJFVL6XOXE",
+    "error": "Transaction submission failed. Server responded: 400 Bad Request",
+    "source_account": "GA67L2Q2P57MNL6SMDWIVKZVGQN7KN4N43IHM6EHQ3YYWNY2B753C7EW",
+    "timestamp": "2026-11-10T06:56:08.483Z"
+  },
+  {
+    "event": "OFF-RAMP_DEMO_XLM",
+    "asset": "XLM (native)",
+    "amount": "1",
+    "destination": "GCSGSR6KQQ5BP2FXVPWRL6SWPUSFWLVONLIBJZUKTVQB5FYJFVL6XOXE",
+    "tx_hash": "8e0f8e57318410807eeba8a829d83af471457a8d23569cfcb01e9fc4afbc713f",
+    "source_account": "GA67L2Q2P57MNL6SMDWIVKZVGQN7KN4N43IHM6EHQ3YYWNY2B753C7EW",
+    "timestamp": "2026-11-10T06:56:13.439Z"
+  }
+]
